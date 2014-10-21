@@ -20,6 +20,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 
+import java.io.IOException;
+
 
 public class RPSActivity extends ActionBarActivity  implements
         GoogleApiClient.ConnectionCallbacks,
@@ -30,6 +32,7 @@ public class RPSActivity extends ActionBarActivity  implements
     MediaRouteSelector mMediaRouteSelector;
     static MediaRouter.Callback mMediaRouterCallback;
     private static final String TAG = "RPS Activity";
+    private GoogleApiClient mApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +41,8 @@ public class RPSActivity extends ActionBarActivity  implements
 
         mMediaRouter = MediaRouter.getInstance(getApplicationContext());
         mMediaRouteSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(CastMediaControlIntent.categoryForCast(CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID))//"YOUR_APPLICATION_ID"))
+                .addControlCategory(CastMediaControlIntent.categoryForCast( /*CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID))*/
+                        /*"3DC89F06"))"ACE707D0"))//*/ "21857AF0"))
                 .build();
 
         mMediaRouterCallback = new MyMediaRouterCallback();
@@ -68,18 +72,74 @@ public class RPSActivity extends ActionBarActivity  implements
         return true;
     }
     private boolean mWaitingForReconnect = false;
+    private boolean mApplicationStarted = false;
+    private HelloWorldChannel mHelloWorldChannel;
     @Override
     public void onConnected(Bundle connectionHint) {
         if (mWaitingForReconnect) {
             mWaitingForReconnect = false;
-            // fixme - where does this function come from? reconnectChannels();
+            //reconnectChannels();
         } else {
             try {
+                Cast.CastApi.launchApplication( mApiClient,
+                        /*"3DC89F06","ACE707D0",*/"21857AF0", ///CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID,
+                                                false).setResultCallback (
+                        new ResultCallback<Cast.ApplicationConnectionResult>() {
+                            @Override
+                            public void onResult (Cast.ApplicationConnectionResult result) {
+                                Status status = result.getStatus();
+                                if (status.isSuccess()) {
+                                    ApplicationMetadata applicationMetadata =
+                                        result.getApplicationMetadata();
+                                    String sessionId = result.getSessionId();
+                                    String applicationStatus = result.getApplicationStatus();
+                                    boolean wasLaunched = result.getWasLaunched();
+
+                                    mApplicationStarted = true;
+
+                                    mHelloWorldChannel = new HelloWorldChannel();
+                                    try {
+                                        Cast.CastApi.setMessageReceivedCallbacks(mApiClient,
+                                                mHelloWorldChannel.getNamespace(),
+                                                mHelloWorldChannel);
+
+                                        //sendMessage("http://gnosm.net/missilecommand/sounds/524.mp3");
+                                    } catch (IOException e) {
+                                        Log.e(TAG, "Exception while creating channel", e);
+                                    }
+
+
+
+                                }
+                            }
+                        }
+                );
             } catch (Exception e) {
                 Log.e(TAG, "Failed to launch application", e);
             }
         }
     }
+
+    private void sendMessage (String message) {
+        if (mApiClient != null && mHelloWorldChannel != null) {
+            try {
+                Cast.CastApi.sendMessage(mApiClient, mHelloWorldChannel.getNamespace(), message)
+                        .setResultCallback(
+                                new ResultCallback<Status>() {
+                                    @Override
+                                    public void onResult(Status result) {
+                                        if (!result.isSuccess()) {
+                                            Log.e(TAG, "Sending message failed");
+                                        }
+                                    }
+                                });
+            } catch (Exception e) {
+                Log.e(TAG, "Exception while sending message", e);
+            }
+
+        }
+    }
+
     @Override
     public void onConnectionSuspended(int cause) {
         mWaitingForReconnect = true;
@@ -123,7 +183,6 @@ public class RPSActivity extends ActionBarActivity  implements
     private final class MyMediaRouterCallback extends MediaRouter.Callback {
 
         private CastDevice mSelectedDevice;
-        private GoogleApiClient mApiClient;
         private Cast.Listener mCastClientListener;
         private final String TAG = "My Media Router Callback";
 
@@ -138,6 +197,8 @@ public class RPSActivity extends ActionBarActivity  implements
                     if (mApiClient != null) {
                         Log.d(TAG, "onApplicationStatusChanged: "
                                 + Cast.CastApi.getApplicationStatus(mApiClient));
+
+
                     }
                 }
 
@@ -163,6 +224,10 @@ public class RPSActivity extends ActionBarActivity  implements
                     .addConnectionCallbacks(RPSActivity.this)
                     .addOnConnectionFailedListener(RPSActivity.this)
                     .build();
+
+            mApiClient.connect();
+
+
         }
 
     }
