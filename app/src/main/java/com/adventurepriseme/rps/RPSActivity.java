@@ -10,6 +10,9 @@ import android.support.v7.media.MediaRouter;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
@@ -46,6 +49,16 @@ public class RPSActivity extends ActionBarActivity  implements
                 .build();
 
         mMediaRouterCallback = new MyMediaRouterCallback();
+
+        final Button sendMessageButton = (Button) findViewById(R.id.sendMessage);
+        sendMessageButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                EditText et = (EditText) findViewById(R.id.messageText);
+                String str = et.getText().toString();
+                sendMessage(str);
+            }
+        });
+
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -83,14 +96,14 @@ public class RPSActivity extends ActionBarActivity  implements
             try {
                 Cast.CastApi.launchApplication( mApiClient,
                         /*"3DC89F06","ACE707D0",*/"21857AF0", ///CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID,
-                                                false).setResultCallback (
+                                                false).setResultCallback(
                         new ResultCallback<Cast.ApplicationConnectionResult>() {
                             @Override
-                            public void onResult (Cast.ApplicationConnectionResult result) {
+                            public void onResult(Cast.ApplicationConnectionResult result) {
                                 Status status = result.getStatus();
                                 if (status.isSuccess()) {
                                     ApplicationMetadata applicationMetadata =
-                                        result.getApplicationMetadata();
+                                            result.getApplicationMetadata();
                                     String sessionId = result.getSessionId();
                                     String applicationStatus = result.getApplicationStatus();
                                     boolean wasLaunched = result.getWasLaunched();
@@ -107,7 +120,6 @@ public class RPSActivity extends ActionBarActivity  implements
                                     } catch (IOException e) {
                                         Log.e(TAG, "Exception while creating channel", e);
                                     }
-
 
 
                                 }
