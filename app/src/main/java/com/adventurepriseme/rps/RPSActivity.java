@@ -1,6 +1,5 @@
 package com.adventurepriseme.rps;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
@@ -86,7 +85,7 @@ public class RPSActivity extends ActionBarActivity  implements
     }
     private boolean mWaitingForReconnect = false;
     private boolean mApplicationStarted = false;
-    private HelloWorldChannel mHelloWorldChannel;
+    private RPSChannel mRPSChannel;
     @Override
     public void onConnected(Bundle connectionHint) {
         if (mWaitingForReconnect) {
@@ -110,11 +109,11 @@ public class RPSActivity extends ActionBarActivity  implements
 
                                     mApplicationStarted = true;
 
-                                    mHelloWorldChannel = new HelloWorldChannel();
+                                    mRPSChannel = new RPSChannel();
                                     try {
                                         Cast.CastApi.setMessageReceivedCallbacks(mApiClient,
-                                                mHelloWorldChannel.getNamespace(),
-                                                mHelloWorldChannel);
+                                                mRPSChannel.getNamespace(),
+                                                mRPSChannel);
 
                                         //sendMessage("http://gnosm.net/missilecommand/sounds/524.mp3");
                                     } catch (IOException e) {
@@ -133,9 +132,9 @@ public class RPSActivity extends ActionBarActivity  implements
     }
 
     private void sendMessage (String message) {
-        if (mApiClient != null && mHelloWorldChannel != null) {
+        if (mApiClient != null && mRPSChannel != null) {
             try {
-                Cast.CastApi.sendMessage(mApiClient, mHelloWorldChannel.getNamespace(), message)
+                Cast.CastApi.sendMessage(mApiClient, mRPSChannel.getNamespace(), message)
                         .setResultCallback(
                                 new ResultCallback<Status>() {
                                     @Override
@@ -149,6 +148,8 @@ public class RPSActivity extends ActionBarActivity  implements
                 Log.e(TAG, "Exception while sending message", e);
             }
 
+        } else {
+            Log.e(TAG, "mApiClient of mRPSChannel null when message sent");
         }
     }
 

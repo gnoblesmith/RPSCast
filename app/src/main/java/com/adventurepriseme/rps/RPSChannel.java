@@ -8,9 +8,9 @@ import com.google.android.gms.cast.CastDevice;
 /**
  * Created by Gabe on 10/19/2014.
  */
-class HelloWorldChannel implements Cast.MessageReceivedCallback {
+class RPSChannel implements Cast.MessageReceivedCallback {
 
-    private final String TAG = "Hello World Channel";
+    private final String TAG = "RPS Cast Channel";
 
     public String getNamespace() {
         return "urn:x-cast:com.adventurpriseme.rps";
