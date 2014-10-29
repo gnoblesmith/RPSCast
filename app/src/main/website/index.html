@@ -69,10 +69,14 @@
         window.messageBus.onMessage = function(event) {
 		displayDebug('Message [' + event.senderId + ']: ' + event.data);
 		// Do stuff here!      
-		//if (event['data']) == 'abc') displayDebug("ABC Received");
-		//else if (event['data'] === 'xyz') displayMessage("XYZ Received");    
+		//if (('' + event) == 'abc') displayMessage("ABC Received");
+		//else if (('' + data) === 'xyz') displayMessage("XYZ Received");    
 		//else displayMessage(event.data); 
-		displayMessage(event.data);
+		if (('a' + event.data) == 'aabc') {
+			displayMessage('Ha!');
+		} else {
+			displayMessage('a' + event.data);
+		}
 		// inform all senders on the CastMessageBus of the incoming message event
 		// sender message listener will be invoked
 		window.messageBus.send(event.senderId, event.data);
