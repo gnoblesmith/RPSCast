@@ -25,7 +25,7 @@ import com.google.android.gms.common.api.Status;
 import java.io.IOException;
 
 
-public class RPSActivity extends ActionBarActivity  implements
+public class CC_MediaRouter_Activity extends ActionBarActivity  implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         Cast.MessageReceivedCallback {
@@ -41,14 +41,12 @@ public class RPSActivity extends ActionBarActivity  implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rps);
 
+        // Create the media router, selector, and callback for the chromecast
         mMediaRouter = MediaRouter.getInstance(getApplicationContext());
-        mMediaRouteSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(CastMediaControlIntent.categoryForCast( /*CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID))*/
-                        /*"3DC89F06"))"ACE707D0"))//*/ "21857AF0"))
-                .build();
-
+        mMediaRouteSelector = new MediaRouteSelector.Builder().addControlCategory(CastMediaControlIntent.categoryForCast("21857AF0")).build();
         mMediaRouterCallback = new MyMediaRouterCallback();
 
+        // Edit box to send a message to the chromecast
         final Button sendMessageButton = (Button) findViewById(R.id.sendMessage);
         sendMessageButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -93,16 +91,13 @@ public class RPSActivity extends ActionBarActivity  implements
             //reconnectChannels();
         } else {
             try {
-                Cast.CastApi.launchApplication( mApiClient,
-                        /*"3DC89F06","ACE707D0",*/"21857AF0", ///CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID,
-                                                false).setResultCallback(
+                Cast.CastApi.launchApplication(mApiClient, "21857AF0", false).setResultCallback(
                         new ResultCallback<Cast.ApplicationConnectionResult>() {
                             @Override
                             public void onResult(Cast.ApplicationConnectionResult result) {
                                 Status status = result.getStatus();
                                 if (status.isSuccess()) {
-                                    ApplicationMetadata applicationMetadata =
-                                            result.getApplicationMetadata();
+                                    ApplicationMetadata applicationMetadata = result.getApplicationMetadata();
                                     String sessionId = result.getSessionId();
                                     String applicationStatus = result.getApplicationStatus();
                                     boolean wasLaunched = result.getWasLaunched();
@@ -148,8 +143,10 @@ public class RPSActivity extends ActionBarActivity  implements
                 Log.e(TAG, "Exception while sending message", e);
             }
 
-        } else {
-            Log.e(TAG, "mApiClient of mRPSChannel null when message sent");
+        } else if (mApiClient == null) {
+            Log.e (TAG, "mApiClient is null!");
+        } else if (mRPSChannel == null) {
+            Log.e(TAG, "mRPSChannel is null!");
         }
     }
 
@@ -159,14 +156,15 @@ public class RPSActivity extends ActionBarActivity  implements
     }
     @Override
     public void onConnectionFailed(ConnectionResult result) {
+        Log.e(TAG, "onConnectionFailed...");
         // fixme teardown();
     }
     public String getNamespace() {
         return "com.adventurpriseme.rps";
     }
+
     @Override
-    public void onMessageReceived(CastDevice castDevice, String namespace,
-                                  String message) {
+    public void onMessageReceived(CastDevice castDevice, String namespace, String message) {
         Log.d(TAG, "onMessageReceived: " + message);
     }
     @Override
@@ -194,7 +192,6 @@ public class RPSActivity extends ActionBarActivity  implements
         super.onStop();
     }
     private final class MyMediaRouterCallback extends MediaRouter.Callback {
-
         private CastDevice mSelectedDevice;
         private Cast.Listener mCastClientListener;
         private final String TAG = "My Media Router Callback";
@@ -210,8 +207,6 @@ public class RPSActivity extends ActionBarActivity  implements
                     if (mApiClient != null) {
                         Log.d(TAG, "onApplicationStatusChanged: "
                                 + Cast.CastApi.getApplicationStatus(mApiClient));
-
-
                     }
                 }
 
@@ -224,23 +219,21 @@ public class RPSActivity extends ActionBarActivity  implements
 
                 @Override
                 public void onApplicationDisconnected(int errorCode) {
+                    Log.d(TAG, "Application Disconnected: " + errorCode);
                     // fixme teardown();
                 }
             };
 
-
             Cast.CastOptions.Builder apiOptionsBuilder = Cast.CastOptions
                     .builder(mSelectedDevice, mCastClientListener);
 
-            mApiClient = new GoogleApiClient.Builder(RPSActivity.this)
+            mApiClient = new GoogleApiClient.Builder(CC_MediaRouter_Activity.this)
                     .addApi(Cast.API, apiOptionsBuilder.build())
-                    .addConnectionCallbacks(RPSActivity.this)
-                    .addOnConnectionFailedListener(RPSActivity.this)
+                    .addConnectionCallbacks(CC_MediaRouter_Activity.this)
+                    .addOnConnectionFailedListener(CC_MediaRouter_Activity.this)
                     .build();
 
             mApiClient.connect();
-
-
         }
 
     }

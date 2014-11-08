@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head><meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
-
     <style type="text/css">body {
         overflow:hidden;
         }
@@ -22,86 +21,277 @@
     <title></title>
 </head>
 <body>
-<div id="message" style="text-align: left;">Messages</div>
-<div id="debug" style="text-align: right;">debugging...</div>
-<script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script><script type="text/javascript">
-      window.onload = function() {
-        cast.receiver.logger.setLevelValue(cast.receiver.LoggerLevel.DEBUG);
-        window.castReceiverManager = cast.receiver.CastReceiverManager.getInstance();
-        displayDebug('Starting Receiver Manager');
-        
-        displayDebug("onload");
-        // handler for the 'ready' event
-        castReceiverManager.onReady = function(event) {
-          displayDebug('Received Ready event: ' + JSON.stringify(event.data));
-          window.castReceiverManager.setApplicationState("Application status is ready...");
-          displayDebug("onReady");
-        };
-        
-        // handler for 'senderconnected' event
-        castReceiverManager.onSenderConnected = function(event) {
-          displayDebug('Received Sender Connected event: ' + event.data);
-          displayDebug(window.castReceiverManager.getSender(event.data).userAgent);
-          displayDebug("onSenderConnected");
-        };
-        
-        // handler for 'senderdisconnected' event
-        castReceiverManager.onSenderDisconnected = function(event) {
-          displayDebug('Received Sender Disconnected event: ' + event.data);
-          if (window.castReceiverManager.getSenders().length == 0) {
-	        window.close();
-	      }
-	  displayDebug("onSenderDisconnected");
-        };
-        
-        // handler for 'systemvolumechanged' event
-        castReceiverManager.onSystemVolumeChanged = function(event) {
-          	displayDebug('Received System Volume Changed event: ' + event.data['level'] + ' ' + event.data['muted']);
-        	displayDebug("onSystemVolumeChanged");
-        };
+    <div id="throw_p1" style="text-align: left;">P1 Throw</div>
+    <div id="throw_p2" style="text-align: right;">P2 Throw</div>
+    <div id="round_winner" style="text-align: center;">Round winner</div>
+    <div id="message" style="text-align: left;">Raw Message</div>
+    <div id="debug" style="text-align: right;">debugging...</div>
+    <footer style="text-align: center">Copyright &#169 adventurpriseme.com</footer>
+    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script><script type="text/javascript">
+        // **********************************************
+        // Main window onLoad - Receiver app entry point
+        // **********************************************
+        window.onload = function () {
+            cast.receiver.logger.setLevelValue (cast.receiver.LoggerLevel.DEBUG);
+            window.castReceiverManager = cast.receiver.CastReceiverManager.getInstance ();
+            displayDebug ('Starting Receiver Manager');
 
-        // create a CastMessageBus to handle messages for a custom namespace
-        window.messageBus =
-          window.castReceiverManager.getCastMessageBus(
-              'urn:x-cast:com.adventurpriseme.rps');
+            displayDebug ("onload");
 
-        // handler for the CastMessageBus message event
-        window.messageBus.onMessage = function(event) {
-		displayDebug('Message [' + event.senderId + ']: ' + event.data);
-		// Do stuff here!      
-		//if (('' + event) == 'abc') displayMessage("ABC Received");
-		//else if (('' + data) === 'xyz') displayMessage("XYZ Received");    
-		//else displayMessage(event.data); 
-		if (('a' + event.data) == 'aabc') {
-			displayMessage('Ha!');
-		} else {
-			displayMessage('a' + event.data);
-		}
-		// inform all senders on the CastMessageBus of the incoming message event
-		// sender message listener will be invoked
-		window.messageBus.send(event.senderId, event.data);
-		displayDebug("onMessage");
+            // **********************************************
+            // handler for the 'ready' event
+            // **********************************************
+            castReceiverManager.onReady = function (event) {
+                displayDebug ('Received Ready event: ' + JSON.stringify (event.data));
+                window.castReceiverManager.setApplicationState ("Application status is ready...");
+                displayDebug ("onReady");
+            };
+
+            // **********************************************
+            // handler for 'senderconnected' event
+            // **********************************************
+            castReceiverManager.onSenderConnected = function (event) {
+                displayDebug ('Received Sender Connected event: ' + event.data);
+                displayDebug (window.castReceiverManager.getSender (event.data).userAgent);
+                displayDebug ("onSenderConnected");
+            };
+
+            // **********************************************
+            // handler for 'senderdisconnected' event
+            // **********************************************
+            castReceiverManager.onSenderDisconnected = function (event) {
+                displayDebug ('Received Sender Disconnected event: ' + event.data);
+                if (window.castReceiverManager.getSenders ().length == 0) {
+                    window.close ();
+                }
+                displayDebug ("onSenderDisconnected");
+            };
+
+            // **********************************************
+            // handler for 'systemvolumechanged' event
+            // **********************************************
+            castReceiverManager.onSystemVolumeChanged = function (event) {
+                displayDebug ('Received System Volume Changed event: ' + event.data['level'] + ' ' + event.data['muted']);
+                displayDebug ("onSystemVolumeChanged");
+            };
+
+            // create a CastMessageBus to handle messages for a custom namespace
+            window.messageBus = window.castReceiverManager.getCastMessageBus ('urn:x-cast:com.adventurpriseme.rps');
+
+            // **********************************************
+            // handler for the CastMessageBus message event
+            // This is where the magic begins!!
+            // **********************************************
+            window.messageBus.onMessage = function (event) {
+                // TODO: Remove debugging code
+                displayDebug ('Message [' + event.senderId + ']: ' + event.data);    // Output debug info
+                displayMessage (event.data);                                         // Output raw message to screen for debug
+
+                // Launch the RPS game here!
+                playRPS (event);
+
+                // inform all senders on the CastMessageBus of the incoming message event
+                // sender message listener will be invoked
+                window.messageBus.send(event.senderId, event.data);
+                displayDebug ("onMessage");
+            }
+
+            // initialize the CastReceiverManager with an application status message
+            window.castReceiverManager.start ({statusText: "Application is starting"});
+            displayDebug ('Receiver Manager started');
+            };  // onLoad ()
+
+
+        // **********************************************
+        // **********************************************
+        // *********  RPS Game Implementation  **********
+        // **********************************************
+        // **********************************************
+        function playRPS (event) {
+            // Get and show p1's throw
+            var strThrow_p1 = getUserThrowAsString (event.data);
+            displayText (strThrow_p1, "throw_p1");
+
+            nThrow_p1 = RPS_getThrowIntFromString (strThrow_p1);
+            if (nThrow_p1 == -1) return;    // Quit on invalid throw
+
+            // Determine and show p2's throw
+            nThrow_p2 = RPS_getNewAutoThrowAsInt ();
+            displayText (RPS_getThrowStringFromInt (nThrow_p2), "throw_p2");
+
+            // Determine round winner
+            nRoundWinner = RPS_getRoundWinner (nThrow_p1, nThrow_p2);
+
+            // Handle round results
+            if (nRoundWinner == 0) {
+                displayText ("Draw!", "round_winner");
+            } else {
+                displayText ("Player " + nRoundWinner + " wins!", "round_winner");
+            }
+
+            // Return the winner
+            return nRoundWinner;
         }
-        
-        //displayDebug(typeof event.data);
 
-        // initialize the CastReceiverManager with an application status message
-        window.castReceiverManager.start({statusText: "Application is starting"});
-        displayDebug('Receiver Manager started');
-      };
-      
-      // utility function to display the received text in the input field
-      function displayMessage(text) {
-        console.log(text);
-        document.getElementById("message").innerHTML=text;
-        window.castReceiverManager.setApplicationState(text);
-      };
-      
-      // utility function to display the debug text in the input field
-      function displayDebug(text) {
-        console.log(text);
-        document.getElementById("debug").innerHTML=text;
-        window.castReceiverManager.setApplicationState(text);
-      };
-    </script></body>
+        // **********************************************
+        // Utility function to convert a users throw to a lowercase string
+        // **********************************************
+        function getUserThrowAsString (strIn) {
+            switch (strIn.toLowerCase ()) {
+                case 0:
+                case 'rock':
+                    return 'rock';
+                case 1:
+                case 'paper':
+                    return 'paper';
+                case 2:
+                case 'scissors':
+                    return 'scissors';
+                default:
+                    console.log ("ERROR: User throw out of bounds: " + strIn);
+                    return 'Bad throw...';
+            }
+        }
+
+        // **********************************************
+        // Utility function to determine the winner of a round
+        // Returns:
+        //  0 - Tie
+        //  1 - P1 wins
+        //  2 - P2 wins
+        // -1 - Error, bad input
+        // **********************************************
+        function RPS_getRoundWinner (nThrow_p1, nThrow_p2) {
+            // Check for tie
+            if (nThrow_p1 == nThrow_p2) return 0;
+
+            // Not a tie, determine winner
+            switch (nThrow_p1) {
+                case 0: // rock
+                    switch (nThrow_p2) {
+                        case 1: // paper beats rock
+                            return 2;
+                        case 2: // rock beats scissors
+                            return 1;
+                        default:
+                            console.log ("ERROR! RPS_getRoundWinner: invalid throw p2 = " + nThrow_p1);
+                            return -1;
+                    }
+                case 1: // paper
+                    switch (nThrow_p2) {
+                        case 0: // paper beats rock
+                            return 1;
+                        case 2: // scissors beat paper
+                            return 2;
+                        default:
+                            console.log ("ERROR! RPS_getRoundWinner: invalid throw p2 = " + nThrow_p1);
+                            return -1;
+                    }
+                case 2: // scissors
+                    switch (nThrow_p2) {
+                        case 0: // rock beats scissors
+                            return 2;
+                        case 1: // scissors beat paper
+                            return 1;
+                        default:
+                            console.log ("ERROR! RPS_getRoundWinner: invalid throw p2 = " + nThrow_p1);
+                            return -1;
+                    }
+                default:
+                    console.log ("ERROR! RPS_getRoundWinner: invalid throw p1 = " + nThrow_p1);
+                    return -1;
+            }
+        }
+        // **********************************************
+        // Utility function to convert a throw from int to string
+        // **********************************************
+        function RPS_getThrowIntFromString (strThrow) {
+            switch (strThrow) {
+                case 'rock':
+                    return 0;
+                case 'paper':
+                    return 1;
+                case 'scissors':
+                    return 2;
+                default:
+                    console.log ("Error: Bad throw conversion. Throw = " + strThrow);
+                    return -1;    // error
+                    break;
+            }
+        }
+
+        // **********************************************
+        // Utility function to convert a throw from string to int
+        // **********************************************
+        function RPS_getThrowStringFromInt (nThrow) {
+          switch (nThrow) {
+              case 0: return 'rock';
+              case 1: return 'paper';
+              case 2: return 'scissors';
+              default:
+                  {
+                  console.log ("Error: Bad throw conversion. Throw = " + nThrow);
+                  return '';
+                  break;
+                  }
+          }
+        }
+
+        // **********************************************
+        // utility function to generate and return a random throw as string
+        // **********************************************
+        function RPS_getNewAutoThrowAsString () {
+            strThrow = RPS_getThrowStringFromInt (getRandomInt (0,3));
+            console.log ('p2 throw: ' + strThrow);
+            return strThrow;
+        }
+
+        // **********************************************
+        // utility function to generate and return a random throw as an int
+        // 0: Rock
+        // 1: Paper
+        // 2: Scissors
+        // **********************************************
+        function RPS_getNewAutoThrowAsInt () {
+            nThrow = getRandomInt (0,3);
+            console.log ('p2 throw: ' + nThrow);
+            return nThrow;
+        }
+
+        // **********************************************
+        // utility function wrapper to display text in a given id
+        // **********************************************
+        function displayText (text, elementID) {
+            console.log ("Message: " + text + "; elementID: " + elementID);
+            document.getElementById (elementID).innerHTML=text;
+            window.castReceiverManager.setApplicationState (text);
+        }
+
+        // **********************************************
+        // utility function to display the received text in the input field
+        // **********************************************
+        function displayMessage (text) {
+            console.log (text);
+            document.getElementById ("message").innerHTML=text;
+            window.castReceiverManager.setApplicationState (text);
+        }
+
+        // **********************************************
+        // utility function to display the debug text in the input field
+        // **********************************************
+        function displayDebug (text) {
+            console.log (text);
+            document.getElementById ("debug").innerHTML=text;
+            window.castReceiverManager.setApplicationState (text);
+        }
+
+        // **********************************************
+        // Returns a random integer between min (included) and max (excluded)
+        // Using Math.round() will give you a non-uniform distribution!
+        // **********************************************
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min)) + min;
+        }
+    </script>
+</body>
 </html>
