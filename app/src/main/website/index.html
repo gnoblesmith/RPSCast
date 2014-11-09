@@ -2,32 +2,37 @@
 <html>
 <head><meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
     <style type="text/css">body {
+        height:auto;
+        width:auto;
+        padding:15px;
         overflow:hidden;
         }
         div{
-        height:720PX;
-        width:1280PX;
+        height:auto;
+        width:auto;
         text-align:center;
-        border:0px solid silver;
+        border:1px solid silver;
         display: table-cell;
         vertical-align:middle;
-        color:#FF00FF;
-        background-color:#00FF00;
+        color:#FFFFFF;
+        background-color:#000000;
         font-weight:bold;
         font-family:Verdana, Geneva, sans-serif;
-        font-size:40px;
+        font-size:30px;
+        padding:10px;
+        margin:30px;
         }
     </style>
-    <title></title>
+    <title>Play Rock, Paper, Scissors! Copyright 2014 adventurpriseme.com</title>
 </head>
 <body>
-    <div id="throw_p1" style="text-align: left;">P1 Throw</div>
-    <div id="throw_p2" style="text-align: right;">P2 Throw</div>
-    <div id="round_winner" style="text-align: center;">Round winner</div>
-    <div id="message" style="text-align: left;">Raw Message</div>
-    <div id="debug" style="text-align: right;">debugging...</div>
-    <footer style="text-align: center">Copyright &#169 adventurpriseme.com</footer>
-    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script><script type="text/javascript">
+<div id="throw_p1" style="text-align: center;float:left">P1 Throw</div>
+<div id="throw_p2" style="text-align: center;float:right">P2 Throw</div>
+<div id="round_winner" style="text-align: center;">Round winner</div>
+<div id="message" style="text-align: center;">Raw Message</div>
+<div id="debug" style="text-align: center;">debugging...</div>
+<footer style="text-align: center">Copyright &#169 adventurpriseme.com</footer>
+<script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script><script type="text/javascript">
         // **********************************************
         // Main window onLoad - Receiver app entry point
         // **********************************************
@@ -88,11 +93,19 @@
                 displayMessage (event.data);                                         // Output raw message to screen for debug
 
                 // Launch the RPS game here!
-                playRPS (event);
+                strRPSResult = playRPS (event);
+                // Send result back to player
+                // TODO: Figure out how to receive actual messages...
+                // I was able to get the RPSChannel::onMessageReceived to get a message from this,
+                // but I wasn't able to figure out how to display it on the phone from there, so I'm
+                // using this in order to keep the data in an easy scope to display from.
+           	    // window.messageBus.send(event.senderId, nRoundWinner.toString ());
 
+           	    // Set application state in order to cheat our message through
+           	    window.castReceiverManager.setApplicationState (strRPSResult);
+           	
                 // inform all senders on the CastMessageBus of the incoming message event
                 // sender message listener will be invoked
-                window.messageBus.send(event.senderId, event.data);
                 displayDebug ("onMessage");
             }
 
@@ -125,12 +138,11 @@
             // Handle round results
             if (nRoundWinner == 0) {
                 displayText ("Draw!", "round_winner");
+                return ("draw");
             } else {
                 displayText ("Player " + nRoundWinner + " wins!", "round_winner");
+                return (nRoundWinner == 1 ? "p1" : "p2");
             }
-
-            // Return the winner
-            return nRoundWinner;
         }
 
         // **********************************************
@@ -264,7 +276,7 @@
         function displayText (text, elementID) {
             console.log ("Message: " + text + "; elementID: " + elementID);
             document.getElementById (elementID).innerHTML=text;
-            window.castReceiverManager.setApplicationState (text);
+            window.castReceiverManager.setApplicationState ("displayText");
         }
 
         // **********************************************
@@ -273,7 +285,7 @@
         function displayMessage (text) {
             console.log (text);
             document.getElementById ("message").innerHTML=text;
-            window.castReceiverManager.setApplicationState (text);
+            window.castReceiverManager.setApplicationState ("displayMessage");
         }
 
         // **********************************************
@@ -282,7 +294,7 @@
         function displayDebug (text) {
             console.log (text);
             document.getElementById ("debug").innerHTML=text;
-            window.castReceiverManager.setApplicationState (text);
+            window.castReceiverManager.setApplicationState ("displayDebug");
         }
 
         // **********************************************

@@ -12,6 +12,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
@@ -114,8 +115,6 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
                                     } catch (IOException e) {
                                         Log.e(TAG, "Exception while creating channel", e);
                                     }
-
-
                                 }
                             }
                         }
@@ -145,7 +144,7 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
 
         } else if (mApiClient == null) {
             Log.e (TAG, "mApiClient is null!");
-        } else if (mRPSChannel == null) {
+        } else { // mRPSChannel == null
             Log.e(TAG, "mRPSChannel is null!");
         }
     }
@@ -167,6 +166,7 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
     public void onMessageReceived(CastDevice castDevice, String namespace, String message) {
         Log.d(TAG, "onMessageReceived: " + message);
     }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -207,6 +207,9 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
                     if (mApiClient != null) {
                         Log.d(TAG, "onApplicationStatusChanged: "
                                 + Cast.CastApi.getApplicationStatus(mApiClient));
+
+                        // Process the RPS results
+                        handleApplicationStateChange_RPS(Cast.CastApi.getApplicationStatus(mApiClient));
                     }
                 }
 
@@ -236,5 +239,31 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
             mApiClient.connect();
         }
 
+
+    }
+
+    // Handle results of RPS game
+    // TODO: Move this into its own unit
+    private void handleApplicationStateChange_RPS(String strResult) {
+        try {
+            if (strResult != null && !strResult.isEmpty()) {
+                TextView tvResults = (TextView) findViewById(R.id.textRoundResult);
+                if (strResult.contains("draw")) {
+                    tvResults.setText("Draw!");
+                } else if (strResult.contains("p1")) {  // P1 wins
+                    tvResults.setText("Win!");
+                } else if (strResult.contains("p2")) {  // P2 wins
+                    tvResults.setText("Lose!");
+                } else if (strResult.contains("rock")) {
+                    tvResults.setText("You threw rock!");
+                } else if (strResult.contains("paper")) {
+                    tvResults.setText("You threw paper");
+                } else if (strResult.contains("scissors")) {
+                    tvResults.setText("You threw scissors");
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception thrown processing RPS results: ", e);
+        }
     }
 }
