@@ -105,7 +105,9 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
 
                                     mApplicationStarted = true;
 
-                                    mRPSChannel = new RPSChannel();
+
+                                    TextView tmp = (TextView) findViewById(R.id.textRoundResult);
+                                    mRPSChannel = new RPSChannel(tmp);
                                     try {
                                         Cast.CastApi.setMessageReceivedCallbacks(mApiClient,
                                                 mRPSChannel.getNamespace(),

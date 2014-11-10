@@ -1,6 +1,7 @@
 package com.adventurepriseme.rps;
 
 import android.util.Log;
+import android.widget.TextView;
 
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.CastDevice;
@@ -11,6 +12,11 @@ import com.google.android.gms.cast.CastDevice;
 class RPSChannel extends CC_MediaRouter_Activity implements Cast.MessageReceivedCallback {
 
     private final String TAG = "RPS Cast Channel";
+    private TextView tv;
+
+    public RPSChannel (TextView _tv) {
+        tv = _tv;
+    }
 
     public String getNamespace() {
         return "urn:x-cast:com.adventurpriseme.rps";
@@ -20,6 +26,8 @@ class RPSChannel extends CC_MediaRouter_Activity implements Cast.MessageReceived
     public void onMessageReceived(CastDevice castDevice, String namespace,
                                   String message) {
         Log.d(TAG, "onMessageReceived: " + message);
+
+        tv.setText(message);
 
         // FIXME: This is commented out because its implementation is broken
     //    handleResults (Integer.parseInt (message));
