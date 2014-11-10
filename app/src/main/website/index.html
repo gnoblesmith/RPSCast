@@ -72,7 +72,7 @@
                 displayDebug ("onSenderConnected");
 
                 // Keep track of new players
-                if (strPlayerID_1 != "" || strPlayerID_2 != "") {
+                if (strPlayerID_1 == "" || strPlayerID_2 == "") {
                     if (strPlayerID_1 == "") {
                         strPlayerID_1 = event.senderId;
                         displayMessage ("p1 ready");
@@ -143,12 +143,15 @@
 
                 if (strRoundResult == "p1") {
                     nWins_p1++;
+                    // Send result back to player
+                    window.messageBus.send(strPlayerID_1, "You win!");
+                    window.messageBus.send(strPlayerID_2, "You lose!");
                 } else if (strRoundResult == "p2") {
                     nWins_p2++;
+                    // Send result back to player
+                    window.messageBus.send(strPlayerID_1, "You lose!");
+                    window.messageBus.send(strPlayerID_2, "You win!");
                 }
-
-                // Send result back to player
-           	    window.messageBus.send(event.senderId, nRoundWinner.toString ());
             }
 
             // initialize the CastReceiverManager with an application status message
@@ -164,8 +167,8 @@
         // **********************************************
         var strThrow_p1 = "";   // Player 1 throw string
         var strThrow_p2 = "";   // Player 2 throw string
-        var nThrow_p1 = 0;      // Player 1 throw int
-        var nThrow_p2 = 0;      // Player 2 throw int
+        var nThrow_p1 = -1;      // Player 1 throw int
+        var nThrow_p2 = -1;      // Player 2 throw int
 
         function playRPS (event) {
             // Get and show the throw
@@ -185,6 +188,8 @@
 
                 // Determine round winner
                 nRoundWinner = RPS_getRoundWinner (nThrow_p1, nThrow_p2);
+                nThrow_p1 = -1;
+                nThrow_p2 = -1;
 
                 // Handle round results
                 if (nRoundWinner == 0) {
