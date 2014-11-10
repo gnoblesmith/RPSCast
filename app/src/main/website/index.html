@@ -34,6 +34,17 @@
 <footer style="text-align: center">Copyright &#169 adventurpriseme.com</footer>
 <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script><script type="text/javascript">
         // **********************************************
+        // Globals for RPS
+        // **********************************************
+        var nWins_p1 = 0;   // Total wins this game, p1
+        var nWins_p2 = 0;   // Total wins this game, p2
+        var strRoundResult; // Result of current round
+        var strGameResult;  // Result of overall game
+        var nNumRounds;     // Number of rounds in the game
+        var strPlayerID_1 = "";  // Sender ID for player 1
+        var strPlayerID_2 = "";  // Sender ID for player 2
+
+        // **********************************************
         // Main window onLoad - Receiver app entry point
         // **********************************************
         window.onload = function () {
@@ -59,6 +70,24 @@
                 displayDebug ('Received Sender Connected event: ' + event.data);
                 displayDebug (window.castReceiverManager.getSender (event.data).userAgent);
                 displayDebug ("onSenderConnected");
+
+                // Keep track of new players
+                if (strPlayerID_1 != "" || strPlayerID_2 != "") {
+                    if (strPlayerID_1 == "") {
+                        strPlayerID_1 = event.senderId;
+                        displayMessage ("p1 ready");
+                        window.castReceiverManager.setApplicationState ("p1 ready");
+                    } else if (strPlayerID_2 == ""){
+                        strPlayerID_2 = event.senderId;
+                        displayMessage ("p2 ready");
+                        window.castReceiverManager.setApplicationState ("p2 ready");
+                    }
+
+                    if (strPlayerID_1 != "" && strPlayerID_2 != "") {
+                        displayMessage ("game ready");
+                        window.castReceiverManager.setApplicationState ("game ready");
+                    }
+                }
             };
 
             // **********************************************
@@ -70,6 +99,19 @@
                     window.close ();
                 }
                 displayDebug ("onSenderDisconnected");
+                
+                // Remove the player
+                if (strPlayerID_1 == event.senderId) {
+                    strPlayerID_1 = "";
+                    nWins_p1 = 0;   // Reset score
+                    displayMessage ("p1 off");      // Set app state and notify user
+                    window.castReceiverManager.setApplicationState ("p1 off");
+                } else if (strPlayerID_2 == event.senderId){
+                    strPlayerID_2 = "";
+                    nWins_p2 = 0;   // Reset score
+                    displayMessage ("p2 off");      // Set app state and notify user
+                    window.castReceiverManager.setApplicationState ("p2 off");
+                }
             };
 
             // **********************************************
@@ -88,25 +130,25 @@
             // This is where the magic begins!!
             // **********************************************
             window.messageBus.onMessage = function (event) {
+                // inform all senders on the CastMessageBus of the incoming message event
+                // sender message listener will be invoked
+                displayDebug ("onMessage");
+
                 // TODO: Remove debugging code
                 displayDebug ('Message [' + event.senderId + ']: ' + event.data);    // Output debug info
                 displayMessage (event.data);                                         // Output raw message to screen for debug
 
                 // Launch the RPS game here!
-                strRPSResult = playRPS (event);
-                // Send result back to player
-                // TODO: Figure out how to receive actual messages...
-                // I was able to get the RPSChannel::onMessageReceived to get a message from this,
-                // but I wasn't able to figure out how to display it on the phone from there, so I'm
-                // using this in order to keep the data in an easy scope to display from.
-           	    // window.messageBus.send(event.senderId, nRoundWinner.toString ());
+                strRoundResult = playRPS (event);
 
-           	    // Set application state in order to cheat our message through
-           	    window.castReceiverManager.setApplicationState (strRPSResult);
-           	
-                // inform all senders on the CastMessageBus of the incoming message event
-                // sender message listener will be invoked
-                displayDebug ("onMessage");
+                if (strRoundResult == "p1") {
+                    nWins_p1++;
+                } else if (strRoundResult == "p2") {
+                    nWins_p2++;
+                }
+
+                // Send result back to player
+           	    window.messageBus.send(event.senderId, nRoundWinner.toString ());
             }
 
             // initialize the CastReceiverManager with an application status message
@@ -120,28 +162,38 @@
         // *********  RPS Game Implementation  **********
         // **********************************************
         // **********************************************
+        var strThrow_p1 = "";   // Player 1 throw string
+        var strThrow_p2 = "";   // Player 2 throw string
+        var nThrow_p1 = 0;      // Player 1 throw int
+        var nThrow_p2 = 0;      // Player 2 throw int
+
         function playRPS (event) {
-            // Get and show p1's throw
-            var strThrow_p1 = getUserThrowAsString (event.data);
-            displayText (strThrow_p1, "throw_p1");
+            // Get and show the throw
+            if (strPlayerID_1 != "" && strPlayerID_2 != "") {
+                if (event.senderId == strPlayerID_1) {
+                    strThrow_p1 = getUserThrowAsString (event.data);
+                    displayText (strThrow_p1, "throw_p1");
+                } else if (event.senderId == strPlayerID_2) {
+                    strThrow_p2 = getUserThrowAsString (event.data);
+                    displayText (strThrow_p2, "throw_p2");
+                }
 
-            nThrow_p1 = RPS_getThrowIntFromString (strThrow_p1);
-            if (nThrow_p1 == -1) return;    // Quit on invalid throw
+                // Validate throws
+                nThrow_p1 = RPS_getThrowIntFromString (strThrow_p1);
+                nThrow_p2 = RPS_getThrowIntFromString (strThrow_p2);
+                if (nThrow_p1 == -1 || nThrow_p2 == -1) return;    // Quit on invalid throw
 
-            // Determine and show p2's throw
-            nThrow_p2 = RPS_getNewAutoThrowAsInt ();
-            displayText (RPS_getThrowStringFromInt (nThrow_p2), "throw_p2");
+                // Determine round winner
+                nRoundWinner = RPS_getRoundWinner (nThrow_p1, nThrow_p2);
 
-            // Determine round winner
-            nRoundWinner = RPS_getRoundWinner (nThrow_p1, nThrow_p2);
-
-            // Handle round results
-            if (nRoundWinner == 0) {
-                displayText ("Draw!", "round_winner");
-                return ("draw");
-            } else {
-                displayText ("Player " + nRoundWinner + " wins!", "round_winner");
-                return (nRoundWinner == 1 ? "p1" : "p2");
+                // Handle round results
+                if (nRoundWinner == 0) {
+                    displayText ("Draw!, "round_winner");
+                    return ("draw");
+                } else {
+                    displayText ("Player " + nRoundWinner + " wins!", "round_winner");
+                    return (nRoundWinner == 1 ? "p1" : "p2");
+                }
             }
         }
 
