@@ -27,10 +27,36 @@ class RPSChannel extends CC_MediaRouter_Activity implements Cast.MessageReceived
                                   String message) {
         Log.d(TAG, "onMessageReceived: " + message);
 
+        // Process the RPS results
+        handleMessageRPS(message);
         tv.setText(message);
 
         // FIXME: This is commented out because its implementation is broken
     //    handleResults (Integer.parseInt (message));
+    }
+
+    // Handle results of RPS game
+    // TODO: Move this into its own unit
+    private void handleMessageRPS(String strResult) {
+        try {
+            if (strResult != null && !strResult.isEmpty()) {
+                if (strResult.contains("draw")) {
+                    tv.setText("Draw!");
+                } else if (strResult.contains("p1")) {  // P1 wins
+                    tv.setText("Win!");
+                } else if (strResult.contains("p2")) {  // P2 wins
+                    tv.setText("Lose!");
+                } else if (strResult.contains("rock")) {
+                    tv.setText("You threw rock!");
+                } else if (strResult.contains("paper")) {
+                    tv.setText("You threw paper");
+                } else if (strResult.contains("scissors")) {
+                    tv.setText("You threw scissors");
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception thrown processing RPS results: ", e);
+        }
     }
 
     // FIXME: Handle results of RPS game

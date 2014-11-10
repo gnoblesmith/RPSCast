@@ -210,8 +210,6 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
                         Log.d(TAG, "onApplicationStatusChanged: "
                                 + Cast.CastApi.getApplicationStatus(mApiClient));
 
-                        // Process the RPS results
-                        handleApplicationStateChange_RPS(Cast.CastApi.getApplicationStatus(mApiClient));
                     }
                 }
 
@@ -244,28 +242,5 @@ public class CC_MediaRouter_Activity extends ActionBarActivity  implements
 
     }
 
-    // Handle results of RPS game
-    // TODO: Move this into its own unit
-    private void handleApplicationStateChange_RPS(String strResult) {
-        try {
-            if (strResult != null && !strResult.isEmpty()) {
-                TextView tvResults = (TextView) findViewById(R.id.textRoundResult);
-                if (strResult.contains("draw")) {
-                    tvResults.setText("Draw!");
-                } else if (strResult.contains("p1")) {  // P1 wins
-                    tvResults.setText("Win!");
-                } else if (strResult.contains("p2")) {  // P2 wins
-                    tvResults.setText("Lose!");
-                } else if (strResult.contains("rock")) {
-                    tvResults.setText("You threw rock!");
-                } else if (strResult.contains("paper")) {
-                    tvResults.setText("You threw paper");
-                } else if (strResult.contains("scissors")) {
-                    tvResults.setText("You threw scissors");
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Exception thrown processing RPS results: ", e);
-        }
-    }
+
 }
